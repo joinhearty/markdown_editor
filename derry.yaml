@@ -1,0 +1,260 @@
+# build_runner
+build:
+  run: flutter packages pub run build_runner build --delete-conflicting-outputs
+  watch: flutter packages pub run build_runner watch --delete-conflicting-outputs
+  clean: flutter packages pub run build_runner clean build
+
+pub:
+  _get:
+    application:
+      - cd packages/application && flutter pub get
+    data:
+      - cd packages/data && flutter pub get
+    domain:
+      - cd packages/domain && flutter pub get
+    shared:
+      - cd packages/shared && flutter pub get
+    ui:
+      - cd packages/ui && flutter pub get
+    root:
+      - flutter pub get
+  _upgrade:
+    application:
+      - cd packages/application && flutter pub upgrade
+    data:
+      - cd packages/data && flutter pub upgrade
+    domain:
+      - cd packages/domain && flutter pub upgrade
+    shared:
+      - cd packages/shared && flutter pub upgrade
+    ui:
+      - cd packages/ui && flutter pub upgrade
+    root:
+      - flutter pub upgrade
+  _clean:
+    application:
+      - cd packages/application && rm -rf pubspec.lock && flutter clean
+    data:
+      - cd packages/data && rm -rf pubspec.lock && flutter clean
+    domain:
+      - cd packages/domain && rm -rf pubspec.lock && flutter clean
+    shared:
+      - cd packages/shared && rm -rf pubspec.lock && flutter clean
+    ui:
+      - cd packages/ui && rm -rf pubspec.lock && flutter clean
+    root:
+      - rm -rf pubspec.lock && flutter clean
+  get:
+    - $pub:_get:application
+    - $pub:_get:data
+    - $pub:_get:domain
+    - $pub:_get:shared
+    - $pub:_get:ui
+    - $pub:_get:root
+  update:
+    - $pub:_upgrade:application
+    - $pub:_upgrade:data
+    - $pub:_upgrade:domain
+    - $pub:_upgrade:shared
+    - $pub:_upgrade:ui
+    - $pub:_upgrade:root
+  major:
+    - $pub:update -- --major-versions
+  clean:
+    - $pub:_clean:application
+    - $pub:_clean:data
+    - $pub:_clean:domain
+    - $pub:_clean:shared
+    - $pub:_clean:ui
+    - $pub:_clean:root
+
+firebase:
+  dev: |
+    rm -rf ios/Runner/GoogleService-Info.plist
+    rm -rf android/app/google-services.json
+    flutterfire configure \
+      -y \
+      --project=dani-dev-5cf72 \
+      --out=lib/firebase_options/firebase_options_dev.dart \
+      --ios-bundle-id=com.dani.mobile.dev \
+      --macos-bundle-id=com.dani.mobile.dev \
+      --android-package-name=com.dani.mobile.dev \
+      --platforms=ios,android
+  prod: |
+    rm -rf ios/Runner/GoogleService-Info.plist
+    rm -rf android/app/google-services.json
+    flutterfire configure \
+      --yes \
+      --project=dani-prod-7c5ef \
+      --out=lib/firebase_options/firebase_options_prod.dart \
+      --ios-bundle-id=com.dani.mobile \
+      --macos-bundle-id=com.dani.mobile \
+      --android-package-name=com.dani.mobile \
+      --platforms=ios,android
+
+clean:
+  pod:
+    - cd ios && pod deintegrate
+    - cd ios && rm -f Podfile.lock
+    - cd ios && rm -r -f Pods
+    - cd ios && pod install --repo-update
+  dep:
+    - rm -rf pubspec.lock
+    - $pub:clean
+    - $pub:get
+  proj:
+    - $clean:dep
+    - $clean:pod
+
+# build android bundle
+bundle:
+  prod:
+    - flutter build appbundle -t lib/main_production.dart --flavor production --ignore-deprecation --no-tree-shake-icons
+    - open build/app/outputs/bundle/productionRelease
+  dev:
+    - flutter build appbundle -t lib/main_development.dart --flavor development --ignore-deprecation --no-tree-shake-icons
+    - open build/app/outputs/bundle/developmentRelease
+
+# sort imports
+sort:
+  current:
+    - flutter pub global run import_sorter:main --no-comments --ignore-config
+  application:
+    - cd packages/application && derry sort current
+  data:
+    - cd packages/data && derry sort current
+  domain:
+    - cd packages/domain && derry sort current
+  shared:
+    - cd packages/shared && derry sort current
+  ui:
+    - cd packages/ui && derry sort current
+  all:
+    - $sort:application
+    - $sort:data
+    - $sort:domain
+    - $sort:shared
+    - $sort:ui
+    - $sort:current
+
+  allWithFail:
+    - $sort:application -- --exit-if-changed
+    - $sort:data -- --exit-if-changed
+    - $sort:domain -- --exit-if-changed
+    - $sort:shared -- --exit-if-changed
+    - $sort:ui -- --exit-if-changed
+
+# format dart code
+format:
+  current:
+    - dart format .
+  application:
+    - cd packages/application && derry format current
+  data:
+    - cd packages/data && derry format current
+  domain:
+    - cd packages/domain && derry format current
+  shared:
+    - cd packages/shared && derry format current
+  ui:
+    - cd packages/ui && derry format current
+  all:
+    - $format:application
+    - $format:data
+    - $format:domain
+    - $format:shared
+    - $format:ui
+    - $format:current
+
+analyze:
+  current:
+    - flutter analyze .
+  application:
+    - cd packages/application && derry format current
+  data:
+    - cd packages/data && derry format current
+  domain:
+    - cd packages/domain && derry format current
+  shared:
+    - cd packages/shared && derry format current
+  ui:
+    - cd packages/ui && derry format current
+  all:
+    - flutter analyze lib test packages
+
+# prepare project for PR
+prep:
+  - $pub:clean
+  - $pub:upgrade
+  - $analyze:all
+  - $format:all
+  - $sort:all
+
+# runs all projects tests, including sub projects
+test:
+  all:
+    - $test:coverage:remove:all
+    - flutter pub run very_good_cli:very_good test -r --coverage --test-randomize-ordering-seed random
+  current:
+    - rm -rf coverage
+    - flutter pub run very_good_cli:very_good test --coverage --test-randomize-ordering-seed random
+  application:
+    - cd packages/application && derry test current
+  data:
+    - cd packages/data && derry test current
+  domain:
+    - cd packages/domain && derry test current
+  shared:
+    - cd packages/shared && derry test current
+  ui:
+    - cd packages/ui && derry test current
+
+  # Code coverage report
+  coverage:
+    # ! requires `brew install lcov`
+    generate:
+      - genhtml -o coverage coverage/lcov.info
+      - open coverage/index.html
+    application:
+      - cd packages/application && derry test coverage generate
+    data:
+      - cd packages/data && derry test coverage generate
+    domain:
+      - cd packages/domain && derry test coverage generate
+    shared:
+      - cd packages/shared && derry test coverage generate
+    ui:
+      - cd packages/ui && derry test coverage generate
+    all:
+      - $test:coverage:application
+      - $test:coverage:data
+      - $test:coverage:domain
+      - $test:coverage:shared
+      - $test:coverage:ui
+
+    remove:
+      current:
+        - rm -rf coverage
+        - rm -rf codecov
+      application:
+        - cd packages/application && derry test coverage remove current
+      data:
+        - cd packages/data && derry test coverage remove current
+      domain:
+        - cd packages/domain && derry test coverage remove current
+      shared:
+        - cd packages/shared && derry test coverage remove current
+      ui:
+        - cd packages/ui && derry test coverage remove current
+      all:
+        - $test:coverage:remove:application
+        - $test:coverage:remove:data
+        - $test:coverage:remove:domain
+        - $test:coverage:remove:shared
+        - $test:coverage:remove:ui
+
+    # uploads code coverage
+    upload:
+      - curl -Os https://uploader.codecov.io/latest/macos/codecov
+      - chmod +x codecov
+      - ./codecov -t "TOKEN, ADD HERE"
