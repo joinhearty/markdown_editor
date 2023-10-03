@@ -5,7 +5,7 @@ class UnorderedList extends HtmlElement {
 
   @override
   String replace(String input) {
-    final pattern = RegExp(r'^[-*] (.*)$', multiLine: true);
+    final pattern = RegExp(r'^[-*] ?(.*)$', multiLine: true);
 
     var text = input.replaceAllMapped(pattern, (match) {
       final text = match.group(1);
