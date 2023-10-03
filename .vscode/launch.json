@@ -9,6 +9,12 @@
       "request": "launch",
       "type": "dart",
       "deviceId": "00008110-001111503E29801E"
+    },
+    {
+      "name": "Web Debug",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome"
     }
   ]
 }
