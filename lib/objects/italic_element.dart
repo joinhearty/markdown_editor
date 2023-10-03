@@ -7,7 +7,7 @@ class ItalicElement extends HtmlElement {
   String replace(String input) {
     return input.replaceAllMapped(
         RegExp(
-          '__(.+?)__',
+          '_(.+?)_',
           multiLine: true,
           dotAll: true,
         ), (match) {
