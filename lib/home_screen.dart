@@ -6,6 +6,7 @@ import 'package:flutter_app/objects/italic_element.dart';
 import 'package:flutter_app/objects/link_element.dart';
 import 'package:flutter_app/objects/ordered_list.dart';
 import 'package:flutter_app/objects/unordered_list.dart';
+import 'package:flutter_app/widgets/markdown_editor.dart';
 import 'package:flutter_html/flutter_html.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -54,10 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               children: <Widget>[
                 SafeArea(
-                  child: TextField(
-                    controller: controller,
-                    maxLines: 5,
-                  ),
+                  child: MarkdownEditor(controller: controller),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
