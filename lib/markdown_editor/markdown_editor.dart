@@ -3,13 +3,36 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class MarkdownEditor extends StatelessWidget {
+class MarkdownEditor extends StatefulWidget {
   const MarkdownEditor({
     super.key,
     required this.controller,
   });
 
   final TextEditingController controller;
+
+  @override
+  State<MarkdownEditor> createState() => _MarkdownEditorState();
+}
+
+class _MarkdownEditorState extends State<MarkdownEditor> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(selectionListener);
+  }
+
+  void selectionListener() {
+    // check if the text is being selected
+    final selection = widget.controller.selection;
+
+    if (selection.baseOffset == selection.extentOffset) {
+      print('no selection');
+      return;
+    }
+
+    print('selection, start: ${selection.start}, end: ${selection.end}');
+  }
 
   // wraps the selected text with ** (bold)
   void boldText() {
@@ -23,41 +46,46 @@ class MarkdownEditor extends StatelessWidget {
 
   // wraps the selected text with []() (link)
   Future<void> pasteLink() async {
-    final clipboard = await Clipboard.getData('text/plain');
+    try {
+      final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
 
-    final url = clipboard?.text;
+      final url = clipboard?.text;
 
-    if (url == null) {
-      return;
-    }
+      if (url == null) {
+        return;
+      }
 
-    // ensure that the url is valid
-    final pattern = RegExp(
-      r'^(?:http|https):\/\/[\w\-_]+(?:\.[\w\-_]+)+[\w\-.,@?^=%&:;/~\\+#]*$',
-      caseSensitive: false,
-      multiLine: false,
-    );
-
-    if (!pattern.hasMatch(url)) {
-      modifyText(
-        select: false,
-        (selected) => url,
+      // ensure that the url is valid
+      final pattern = RegExp(
+        r'^(?:(?:http|https):\/\/)?[\w\-_]+(?:\.[\w\-_]+)+[\w\-.,@?^=%&:;/~\\+#]*$',
+        caseSensitive: false,
+        multiLine: false,
       );
-      return;
-    }
 
-    modifyText((selected) => '[$selected]($url)');
+      if (!pattern.hasMatch(url)) {
+        modifyText(
+          select: false,
+          (selected) => url,
+        );
+        return;
+      }
+
+      modifyText((selected) => '[$selected]($url)');
+    } catch (e) {
+      // do nothing
+    }
   }
 
   void modifyText(
     String Function(String) modifier, {
     bool select = true,
   }) {
-    final selectedText = controller.selection.textInside(controller.text);
+    final selectedText =
+        widget.controller.selection.textInside(widget.controller.text);
 
-    final text = controller.text;
+    final text = widget.controller.text;
 
-    final selection = controller.selection;
+    final selection = widget.controller.selection;
 
     final modifiedText = modifier(selectedText);
 
@@ -96,7 +124,7 @@ class MarkdownEditor extends StatelessWidget {
           selectedText,
         );
 
-        controller.value = controller.value.copyWith(
+        widget.controller.value = widget.controller.value.copyWith(
           text: newText,
           selection: TextSelection(
             baseOffset: selection.start - startLength,
@@ -112,15 +140,23 @@ class MarkdownEditor extends StatelessWidget {
 
     var textSelection = TextSelection(
       baseOffset: selection.start + startLength,
-      extentOffset: selection.end + endLength,
+      extentOffset: selection.start + selectedText.length + startLength,
     );
 
     if (!select) {
-      textSelection =
-          TextSelection.collapsed(offset: selection.end + endLength);
+      textSelection = TextSelection.collapsed(
+        offset: selection.start + selectedText.length + startLength,
+      );
     }
 
-    controller.value = controller.value.copyWith(
+    if (selectedText.isEmpty) {
+      textSelection = TextSelection.collapsed(
+        offset:
+            selection.start + selectedText.length + (modifiedText.length ~/ 2),
+      );
+    }
+
+    widget.controller.value = widget.controller.value.copyWith(
       text: newText,
       selection: textSelection,
     );
@@ -128,9 +164,9 @@ class MarkdownEditor extends StatelessWidget {
 
   // increases the heading level of the line where the cursor is
   void increaseHeading() {
-    final text = controller.text;
+    final text = widget.controller.text;
 
-    final selection = controller.selection;
+    final selection = widget.controller.selection;
 
     final segments = text.split('\n');
 
@@ -170,16 +206,16 @@ class MarkdownEditor extends StatelessWidget {
       newLine,
     );
 
-    controller.value = controller.value.copyWith(
+    widget.controller.value = widget.controller.value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(offset: lineEnd + newLine.length),
     );
   }
 
   void decreaseHeading() {
-    final text = controller.text;
+    final text = widget.controller.text;
 
-    final selection = controller.selection;
+    final selection = widget.controller.selection;
 
     final segments = text.split('\n');
 
@@ -219,16 +255,16 @@ class MarkdownEditor extends StatelessWidget {
       newLine,
     );
 
-    controller.value = controller.value.copyWith(
+    widget.controller.value = widget.controller.value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(offset: lineEnd + newLine.length),
     );
   }
 
   void checkForList() {
-    final text = controller.text;
+    final text = widget.controller.text;
 
-    final selection = controller.selection;
+    final selection = widget.controller.selection;
 
     final segments = text.split('\n');
 
@@ -250,7 +286,7 @@ class MarkdownEditor extends StatelessWidget {
     final list = RegExp(r'^(\s*)([-*+]|(\d+)\.) (.*)');
     if (!list.hasMatch(line)) {
       // add new new (as normal behavior)
-      controller.value = controller.value.copyWith(
+      widget.controller.value = widget.controller.value.copyWith(
         text: text.replaceRange(
           selection.start,
           selection.end,
@@ -276,7 +312,7 @@ class MarkdownEditor extends StatelessWidget {
         '',
       );
 
-      controller.value = controller.value.copyWith(
+      widget.controller.value = widget.controller.value.copyWith(
         text: newText,
         selection: TextSelection.collapsed(offset: lineEnd),
       );
@@ -301,7 +337,7 @@ class MarkdownEditor extends StatelessWidget {
       newLine,
     );
 
-    controller.value = controller.value.copyWith(
+    widget.controller.value = widget.controller.value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(
         offset: lineEnd + line.length + newLine.length,
@@ -326,8 +362,8 @@ class MarkdownEditor extends StatelessWidget {
         const SingleActivator(LogicalKeyboardKey.enter): checkForList,
       },
       child: TextField(
-        controller: controller,
-        maxLines: 5,
+        controller: widget.controller,
+        maxLines: 10,
       ),
     );
   }
