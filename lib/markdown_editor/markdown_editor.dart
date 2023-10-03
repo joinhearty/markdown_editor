@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_app/markdown_editor/get_url.dart';
+import 'package:flutter_app/objects/link_element.dart';
 
 class MarkdownEditor extends StatefulWidget {
   const MarkdownEditor({
@@ -16,6 +18,8 @@ class MarkdownEditor extends StatefulWidget {
 }
 
 class _MarkdownEditorState extends State<MarkdownEditor> {
+  TextSelection lastKnownPosition = const TextSelection.collapsed(offset: 0);
+
   @override
   void initState() {
     super.initState();
@@ -23,15 +27,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
   }
 
   void selectionListener() {
-    // check if the text is being selected
-    final selection = widget.controller.selection;
-
-    if (selection.baseOffset == selection.extentOffset) {
-      print('no selection');
-      return;
-    }
-
-    print('selection, start: ${selection.start}, end: ${selection.end}');
+    lastKnownPosition = widget.controller.selection;
   }
 
   // wraps the selected text with ** (bold)
@@ -41,15 +37,26 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
   // wraps the selected text with __ (italics)
   void italicsText() {
-    modifyText((selected) => '__${selected}__');
+    modifyText((selected) => '_${selected}_');
+  }
+
+  // wraps the selected text with == (highlight)
+  void highlightText() {
+    modifyText((selected) => '==$selected==');
   }
 
   // wraps the selected text with []() (link)
-  Future<void> pasteLink() async {
+  //
+  // gets link from clipboard if not provided
+  Future<void> insertLink([String? text, String? link]) async {
     try {
-      final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+      var url = link;
 
-      final url = clipboard?.text;
+      if (url == null) {
+        final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+
+        url = clipboard?.text;
+      }
 
       if (url == null) {
         return;
@@ -65,12 +72,20 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       if (!pattern.hasMatch(url)) {
         modifyText(
           select: false,
-          (selected) => url,
+          (selected) => url!,
         );
         return;
       }
 
-      modifyText((selected) => '[$selected]($url)');
+      modifyText((selected) {
+        var alt = selected;
+
+        if (text != null) {
+          alt = text;
+        }
+
+        return '[$alt]($url)';
+      });
     } catch (e) {
       // do nothing
     }
@@ -94,7 +109,17 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
     final indexOfSelected = modifiedText.indexOf(selectedText);
 
-    assert(indexOfSelected != -1, 'selected text not found in modified text');
+    if (indexOfSelected == -1) {
+      // replace the entire text
+      widget.controller.value = widget.controller.value.copyWith(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: selection.start + modifiedText.length,
+        ),
+      );
+
+      return;
+    }
 
     final startLength = indexOfSelected;
     final endLength = modifiedText.length - selectedText.length - startLength;
@@ -345,6 +370,26 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     );
   }
 
+  // writes a tab character where the cursor is
+  void writeTab() {
+    final text = widget.controller.text;
+
+    final selection = widget.controller.selection;
+
+    const tab = '\t';
+
+    final newText = text.replaceRange(
+      selection.start,
+      null,
+      tab,
+    );
+
+    widget.controller.value = widget.controller.value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: selection.start + tab.length),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CallbackShortcuts(
@@ -353,17 +398,142 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         const CharacterActivator('b', control: true): boldText,
         const CharacterActivator('i', meta: true): italicsText,
         const CharacterActivator('i', control: true): italicsText,
-        const CharacterActivator('v', meta: true): pasteLink,
-        const CharacterActivator('v', control: true): pasteLink,
+        const CharacterActivator('v', meta: true): insertLink,
+        const CharacterActivator('v', control: true): insertLink,
         const CharacterActivator('.', meta: true): increaseHeading,
         const CharacterActivator('.', control: true): increaseHeading,
         const CharacterActivator(',', meta: true): decreaseHeading,
         const CharacterActivator(',', control: true): decreaseHeading,
+        const SingleActivator(
+          LogicalKeyboardKey.keyH,
+          control: true,
+          shift: true,
+        ): highlightText,
+        const SingleActivator(
+          LogicalKeyboardKey.keyH,
+          meta: true,
+          shift: true,
+        ): highlightText,
         const SingleActivator(LogicalKeyboardKey.enter): checkForList,
+        const SingleActivator(LogicalKeyboardKey.tab): () {},
+        const SingleActivator(LogicalKeyboardKey.tab, shift: true): () {},
       },
-      child: TextField(
-        controller: widget.controller,
-        maxLines: 10,
+      child: Column(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              children: <Widget>[
+                _Button(
+                  tooltip: 'Bold (Ctrl + B)',
+                  icon: const Icon(Icons.format_bold),
+                  onPressed: boldText,
+                ),
+                _Button(
+                  tooltip: 'Italics (Ctrl + I)',
+                  icon: const Icon(Icons.format_italic),
+                  onPressed: italicsText,
+                ),
+                _Button(
+                  tooltip: 'Insert Link (Ctrl + V)',
+                  icon: const Icon(Icons.link),
+                  onPressed: () async {
+                    String initialText = '';
+                    String initialUrl = '';
+
+                    final selectedText = widget.controller.selection.textInside(
+                      widget.controller.text,
+                    );
+
+                    if (LinkElement.pattern.hasMatch(selectedText)) {
+                      final match =
+                          LinkElement.pattern.firstMatch(selectedText);
+
+                      initialText = match?.group(1) ?? '';
+                      initialUrl = match?.group(2) ?? '';
+                    } else {
+                      initialText = selectedText;
+
+                      final clipboard =
+                          await Clipboard.getData(Clipboard.kTextPlain);
+
+                      initialUrl = (clipboard?.text ?? '').trim();
+                    }
+
+                    if (!context.mounted) {
+                      return;
+                    }
+
+                    GetUrl(
+                      initialText: initialText,
+                      initialUrl: initialUrl,
+                      onGet: (({String text, String url}) data) {
+                        maintainSelection();
+
+                        insertLink(data.text, data.url);
+                      },
+                    ).show(context);
+                  },
+                ),
+                _Button(
+                  tooltip: 'Increase Heading (Ctrl + .)',
+                  icon: const Icon(Icons.text_increase),
+                  onPressed: increaseHeading,
+                ),
+                _Button(
+                  tooltip: 'Decrease Heading (Ctrl + ,)',
+                  icon: const Icon(Icons.text_decrease),
+                  onPressed: decreaseHeading,
+                ),
+                _Button(
+                  tooltip: 'Highlight (Ctrl + Shift + H)',
+                  icon: const Icon(Icons.h_mobiledata_sharp),
+                  onPressed: highlightText,
+                ),
+              ],
+            ),
+          ),
+          TextField(
+            controller: widget.controller,
+            maxLines: 10,
+            onTapOutside: (_) {
+              maintainSelection();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void maintainSelection() {
+    widget.controller.selection = lastKnownPosition;
+  }
+}
+
+class _Button extends StatelessWidget {
+  const _Button({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
+
+  final String? tooltip;
+  final Widget icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onPressed,
+      child: ColoredBox(
+        color: Colors.transparent,
+        child: SizedBox.square(
+          dimension: 50,
+          child: Tooltip(message: tooltip ?? '', child: icon),
+        ),
       ),
     );
   }
