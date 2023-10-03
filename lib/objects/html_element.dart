@@ -1,7 +1,5 @@
 abstract class HtmlElement {
-  const HtmlElement(this.markdownSymbol);
-
-  final String markdownSymbol;
+  const HtmlElement();
 
   String replace(String input);
 }

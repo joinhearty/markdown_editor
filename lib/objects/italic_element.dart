@@ -1,13 +1,13 @@
 import 'package:flutter_app/objects/html_element.dart';
 
 class ItalicElement extends HtmlElement {
-  const ItalicElement() : super('__');
+  const ItalicElement();
 
   @override
   String replace(String input) {
     return input.replaceAllMapped(
         RegExp(
-          '$markdownSymbol(.+?)$markdownSymbol',
+          '__(.+?)__',
           multiLine: true,
           dotAll: true,
         ), (match) {

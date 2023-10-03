@@ -1,7 +1,7 @@
 import 'package:flutter_app/objects/html_element.dart';
 
 class HeaderElement extends HtmlElement {
-  const HeaderElement() : super('#');
+  const HeaderElement();
 
   @override
   String replace(String input) {

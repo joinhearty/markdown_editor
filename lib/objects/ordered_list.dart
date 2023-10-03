@@ -1,7 +1,7 @@
 import 'package:flutter_app/objects/html_element.dart';
 
 class OrderedList extends HtmlElement {
-  const OrderedList() : super(r'\d\.');
+  const OrderedList();
 
   @override
   String replace(String input) {

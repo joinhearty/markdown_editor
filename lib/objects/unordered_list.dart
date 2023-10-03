@@ -1,7 +1,7 @@
 import 'package:flutter_app/objects/html_element.dart';
 
 class UnorderedList extends HtmlElement {
-  const UnorderedList() : super(r'\*');
+  const UnorderedList();
 
   @override
   String replace(String input) {
