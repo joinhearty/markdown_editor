@@ -5,7 +5,7 @@ class OrderedList extends HtmlElement {
 
   @override
   String toHtml(String input) {
-    final pattern = RegExp(r'^(?:\s*)\d+.(?: (.*))?$', multiLine: true);
+    final pattern = RegExp(r'^(?:\s*)\d+\.(?: (.*))?$', multiLine: true);
 
     var text = input.replaceAllMapped(pattern, (match) {
       final text = match.group(1) ?? '';
