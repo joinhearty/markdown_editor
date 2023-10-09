@@ -62,17 +62,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: DecoratedBox(
                     decoration: BoxDecoration(border: Border.all()),
                     child: SingleChildScrollView(
-                      child: Html(
-                        data: html,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Html(
+                          data: html,
+                        ),
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: DecoratedBox(
                     decoration: BoxDecoration(border: Border.all()),
                     child: SingleChildScrollView(
-                      child: Text(markdown),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Text(markdown),
+                      ),
                     ),
                   ),
                 ),
