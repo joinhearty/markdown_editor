@@ -6,10 +6,12 @@ import 'package:markdown_editor/src/elements/link_element.dart';
 class MarkdownEditor extends StatefulWidget {
   const MarkdownEditor({
     super.key,
-    required this.controller,
+    this.controller,
+    this.onChanged,
   });
 
-  final TextEditingController controller;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
 
   @override
   State<MarkdownEditor> createState() => _MarkdownEditorState();
@@ -17,30 +19,38 @@ class MarkdownEditor extends StatefulWidget {
 
 class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
   TextSelection lastKnownPosition = const TextSelection.collapsed(offset: 0);
+  late final TextEditingController _controller;
 
   @override
-  TextEditingController get controller => widget.controller;
+  TextEditingController get controller => _controller;
 
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(selectionListener);
+
+    _controller = widget.controller ?? TextEditingController();
+    _controller.addListener(selectionListener);
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(selectionListener);
+    _controller.removeListener(selectionListener);
+
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+
     super.dispose();
   }
 
   void selectionListener() {
-    lastKnownPosition = widget.controller.selection;
+    lastKnownPosition = controller.selection;
   }
 
   void checkForList() {
-    final text = widget.controller.text;
+    final text = controller.text;
 
-    final selection = widget.controller.selection;
+    final selection = controller.selection;
 
     final segments = text.split('\n');
 
@@ -62,7 +72,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
     final list = RegExp(r'^(\s*)([-*+]|(\d+)\.) (.*)');
     if (!list.hasMatch(line)) {
       // add new new (as normal behavior)
-      widget.controller.value = widget.controller.value.copyWith(
+      controller.value = controller.value.copyWith(
         text: text.replaceRange(
           selection.start,
           selection.end,
@@ -88,7 +98,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
         '',
       );
 
-      widget.controller.value = widget.controller.value.copyWith(
+      controller.value = controller.value.copyWith(
         text: newText,
         selection: TextSelection.collapsed(offset: lineEnd),
       );
@@ -113,7 +123,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
       newLine,
     );
 
-    widget.controller.value = widget.controller.value.copyWith(
+    controller.value = controller.value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(
         offset: lineEnd + line.length + newLine.length,
@@ -122,7 +132,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
   }
 
   void maintainSelection() {
-    widget.controller.selection = lastKnownPosition;
+    controller.selection = lastKnownPosition;
   }
 
   @override
@@ -179,8 +189,8 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
                     String initialText = '';
                     String initialUrl = '';
 
-                    final selectedText = widget.controller.selection.textInside(
-                      widget.controller.text,
+                    final selectedText = controller.selection.textInside(
+                      controller.text,
                     );
 
                     if (LinkElement.pattern.hasMatch(selectedText)) {
@@ -232,8 +242,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
             ),
           ),
           TextField(
-            controller: widget.controller,
+            controller: controller,
             maxLines: 10,
+            onChanged: widget.onChanged,
             onTapOutside: (_) {
               maintainSelection();
             },
