@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final controller = TextEditingController();
   String html = '';
+  String markdown = '';
 
   @override
   void initState() {
@@ -27,10 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void onTextChanged() {
-    final text = convertToHtml(controller.text);
-
     setState(() {
-      html = text;
+      html = convertToHtml(controller.text);
+      markdown = convertToMarkdown(html);
     });
   }
 
@@ -68,6 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                Expanded(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(border: Border.all()),
+                    child: SingleChildScrollView(
+                      child: Text(markdown),
+                    ),
+                  ),
+                ),
                 const Spacer(),
               ],
             ),
@@ -92,10 +100,32 @@ String convertToHtml(String input) {
   ];
 
   for (final element in elements) {
-    text = element.replace(text);
+    text = element.toHtml(text);
   }
 
   text = text.replaceAll('\n', '<br>');
+
+  return text;
+}
+
+String convertToMarkdown(String input) {
+  var text = input.trim();
+
+  const elements = [
+    BoldElement(),
+    ItalicElement(),
+    HeaderElement(),
+    HighlightElement(),
+    OrderedList(),
+    UnorderedList(),
+    LinkElement(),
+  ];
+
+  for (final element in elements) {
+    text = element.toMarkdown(text);
+  }
+
+  text = text.replaceAll('<br>', '\n');
 
   return text;
 }

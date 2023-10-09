@@ -4,7 +4,7 @@ class OrderedList extends HtmlElement {
   const OrderedList();
 
   @override
-  String replace(String input) {
+  String toHtml(String input) {
     final pattern = RegExp(r'^(?:\s*)\d+.(?: (.*))?$', multiLine: true);
 
     var text = input.replaceAllMapped(pattern, (match) {
@@ -48,5 +48,31 @@ class OrderedList extends HtmlElement {
     }
 
     return buffer.toString();
+  }
+
+  @override
+  String toMarkdown(String input) {
+    final orderedListPattern = RegExp(r'<ol>([\s\S]*?)<\/ol>', multiLine: true);
+
+    return input.replaceAllMapped(orderedListPattern, (match) {
+      final list = match.group(1);
+
+      final segments = list!.split('<li>');
+
+      final buffer = StringBuffer();
+
+      for (var i = 1; i < segments.length; i++) {
+        var segment = segments[i];
+
+        segment = segment.replaceAll('</li>', '');
+
+        buffer
+          ..write(i)
+          ..write('. ')
+          ..write(segment);
+      }
+
+      return buffer.toString();
+    });
   }
 }

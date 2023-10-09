@@ -4,7 +4,7 @@ class ItalicElement extends HtmlElement {
   const ItalicElement();
 
   @override
-  String replace(String input) {
+  String toHtml(String input) {
     return input.replaceAllMapped(
         RegExp(
           '_(.+?)_',
@@ -14,6 +14,20 @@ class ItalicElement extends HtmlElement {
       final text = match.group(1);
 
       return '<i>$text</i>';
+    });
+  }
+
+  @override
+  String toMarkdown(String input) {
+    return input.replaceAllMapped(
+        RegExp(
+          '<i>(.+?)</i>',
+          multiLine: true,
+          dotAll: true,
+        ), (match) {
+      final text = match.group(1);
+
+      return '_${text}_';
     });
   }
 }

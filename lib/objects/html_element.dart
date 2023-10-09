@@ -1,5 +1,7 @@
 abstract class HtmlElement {
   const HtmlElement();
 
-  String replace(String input);
+  String toHtml(String input);
+
+  String toMarkdown(String input);
 }
