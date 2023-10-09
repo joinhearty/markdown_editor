@@ -1,9 +1,7 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_app/markdown_editor/get_url.dart';
-import 'package:flutter_app/objects/link_element.dart';
+import 'package:markdown_editor/markdown_editor.dart';
+import 'package:markdown_editor/src/elements/link_element.dart';
 
 class MarkdownEditor extends StatefulWidget {
   const MarkdownEditor({
@@ -17,8 +15,11 @@ class MarkdownEditor extends StatefulWidget {
   State<MarkdownEditor> createState() => _MarkdownEditorState();
 }
 
-class _MarkdownEditorState extends State<MarkdownEditor> {
+class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
   TextSelection lastKnownPosition = const TextSelection.collapsed(offset: 0);
+
+  @override
+  TextEditingController get controller => widget.controller;
 
   @override
   void initState() {
@@ -26,264 +27,14 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     widget.controller.addListener(selectionListener);
   }
 
+  @override
+  void dispose() {
+    widget.controller.removeListener(selectionListener);
+    super.dispose();
+  }
+
   void selectionListener() {
     lastKnownPosition = widget.controller.selection;
-  }
-
-  // wraps the selected text with ** (bold)
-  void boldText() {
-    modifyText((selected) => '**$selected**');
-  }
-
-  // wraps the selected text with __ (italics)
-  void italicsText() {
-    modifyText((selected) => '_${selected}_');
-  }
-
-  // wraps the selected text with == (highlight)
-  void highlightText() {
-    modifyText((selected) => '==$selected==');
-  }
-
-  // wraps the selected text with []() (link)
-  //
-  // gets link from clipboard if not provided
-  Future<void> insertLink([String? text, String? link]) async {
-    try {
-      var url = link;
-
-      if (url == null) {
-        final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
-
-        url = clipboard?.text;
-      }
-
-      if (url == null) {
-        return;
-      }
-
-      // ensure that the url is valid
-      final pattern = RegExp(
-        r'^(?:(?:http|https):\/\/)?[\w\-_]+(?:\.[\w\-_]+)+[\w\-.,@?^=%&:;/~\\+#]*$',
-        caseSensitive: false,
-        multiLine: false,
-      );
-
-      if (!pattern.hasMatch(url)) {
-        modifyText(
-          select: false,
-          (selected) => url!,
-        );
-        return;
-      }
-
-      modifyText((selected) {
-        var alt = selected;
-
-        if (text != null) {
-          alt = text;
-        }
-
-        return '[$alt]($url)';
-      });
-    } catch (e) {
-      // do nothing
-    }
-  }
-
-  void modifyText(
-    String Function(String) modifier, {
-    bool select = true,
-  }) {
-    final selectedText =
-        widget.controller.selection.textInside(widget.controller.text);
-
-    final text = widget.controller.text;
-
-    final selection = widget.controller.selection;
-
-    final modifiedText = modifier(selectedText);
-
-    final newText =
-        text.replaceRange(selection.start, selection.end, modifiedText);
-
-    final indexOfSelected = modifiedText.indexOf(selectedText);
-
-    if (indexOfSelected == -1) {
-      // replace the entire text
-      widget.controller.value = widget.controller.value.copyWith(
-        text: newText,
-        selection: TextSelection.collapsed(
-          offset: selection.start + modifiedText.length,
-        ),
-      );
-
-      return;
-    }
-
-    final startLength = indexOfSelected;
-    final endLength = modifiedText.length - selectedText.length - startLength;
-
-    try {
-      // check the prefix/suffix of the selected text to see if this modification
-      // has already been set, if so, remove it
-      final prefix = text.substring(
-        selection.start - startLength,
-        selection.start,
-      );
-      final prefixHasMatch = prefix == modifiedText.substring(0, prefix.length);
-
-      final suffix = text.substring(
-        selection.end,
-        selection.end + endLength,
-      );
-      final suffixHasMatch = suffix ==
-          modifiedText.substring(
-            modifiedText.length - suffix.length,
-          );
-
-      if (prefixHasMatch && suffixHasMatch) {
-        final newText = text.replaceRange(
-          selection.start - startLength,
-          selection.end + endLength,
-          selectedText,
-        );
-
-        widget.controller.value = widget.controller.value.copyWith(
-          text: newText,
-          selection: TextSelection(
-            baseOffset: selection.start - startLength,
-            extentOffset: selection.start - startLength + selectedText.length,
-          ),
-        );
-
-        return;
-      }
-    } catch (_) {
-      // do nothing, this is just to catch out of bounds errors
-    }
-
-    var textSelection = TextSelection(
-      baseOffset: selection.start + startLength,
-      extentOffset: selection.start + selectedText.length + startLength,
-    );
-
-    if (!select) {
-      textSelection = TextSelection.collapsed(
-        offset: selection.start + selectedText.length + startLength,
-      );
-    }
-
-    if (selectedText.isEmpty) {
-      textSelection = TextSelection.collapsed(
-        offset:
-            selection.start + selectedText.length + (modifiedText.length ~/ 2),
-      );
-    }
-
-    widget.controller.value = widget.controller.value.copyWith(
-      text: newText,
-      selection: textSelection,
-    );
-  }
-
-  // increases the heading level of the line where the cursor is
-  void increaseHeading() {
-    final text = widget.controller.text;
-
-    final selection = widget.controller.selection;
-
-    final segments = text.split('\n');
-
-    var lineEnd = 0;
-    String? line;
-    for (final segment in segments) {
-      if (lineEnd + segment.length < selection.baseOffset) {
-        lineEnd += segment.length + 1;
-      } else {
-        line = segment;
-        break;
-      }
-    }
-
-    if (line == null) {
-      return;
-    }
-
-    final heading = RegExp(r'^(#+) ');
-    var newLine = line.replaceAllMapped(heading, (match) {
-      final headingLevel = match.group(1)?.length;
-
-      final newHeadingLevel = min(6, (headingLevel ?? 0) + 1);
-
-      final newHeading = '#' * newHeadingLevel;
-
-      return '$newHeading ';
-    });
-
-    if (!heading.hasMatch(newLine)) {
-      newLine = '# $newLine';
-    }
-
-    final newText = text.replaceRange(
-      lineEnd,
-      lineEnd + line.length,
-      newLine,
-    );
-
-    widget.controller.value = widget.controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(offset: lineEnd + newLine.length),
-    );
-  }
-
-  void decreaseHeading() {
-    final text = widget.controller.text;
-
-    final selection = widget.controller.selection;
-
-    final segments = text.split('\n');
-
-    var lineEnd = 0;
-    String? line;
-    for (final segment in segments) {
-      if (lineEnd + segment.length < selection.baseOffset) {
-        lineEnd += segment.length + 1;
-      } else {
-        line = segment;
-        break;
-      }
-    }
-
-    if (line == null) {
-      return;
-    }
-
-    final heading = RegExp(r'^(#+) ');
-    var newLine = line.replaceAllMapped(heading, (match) {
-      final headingLevel = match.group(1)?.length;
-
-      final newHeadingLevel = max(0, (headingLevel ?? 0) - 1);
-
-      if (newHeadingLevel == 0) {
-        return '';
-      }
-
-      final newHeading = '#' * newHeadingLevel;
-
-      return '$newHeading ';
-    });
-
-    final newText = text.replaceRange(
-      lineEnd,
-      lineEnd + line.length,
-      newLine,
-    );
-
-    widget.controller.value = widget.controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(offset: lineEnd + newLine.length),
-    );
   }
 
   void checkForList() {
@@ -370,6 +121,10 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
     );
   }
 
+  void maintainSelection() {
+    widget.controller.selection = lastKnownPosition;
+  }
+
   @override
   Widget build(BuildContext context) {
     return CallbackShortcuts(
@@ -447,7 +202,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
                       return;
                     }
 
-                    GetUrl(
+                    GetUrlDialog(
                       initialText: initialText,
                       initialUrl: initialUrl,
                       onGet: (({String text, String url}) data) {
@@ -486,10 +241,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         ],
       ),
     );
-  }
-
-  void maintainSelection() {
-    widget.controller.selection = lastKnownPosition;
   }
 }
 

@@ -1,19 +1,19 @@
-import 'package:flutter_app/objects/html_element.dart';
+import 'package:markdown_editor/src/elements/element.dart';
 
-class ItalicElement extends HtmlElement {
-  const ItalicElement();
+class BoldElement extends Element {
+  const BoldElement();
 
   @override
   String toHtml(String input) {
     return input.replaceAllMapped(
         RegExp(
-          '_(.+?)_',
+          r'\*\*(.+?)\*\*',
           multiLine: true,
           dotAll: true,
         ), (match) {
       final text = match.group(1);
 
-      return '<i>$text</i>';
+      return '<b>$text</b>';
     });
   }
 
@@ -21,13 +21,13 @@ class ItalicElement extends HtmlElement {
   String toMarkdown(String input) {
     return input.replaceAllMapped(
         RegExp(
-          '<i>(.+?)</i>',
+          r'<b>(.+?)</b>',
           multiLine: true,
           dotAll: true,
         ), (match) {
       final text = match.group(1);
 
-      return '_${text}_';
+      return '**$text**';
     });
   }
 }

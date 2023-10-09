@@ -1,7 +1,7 @@
-import 'package:flutter_app/objects/html_element.dart';
+import 'package:markdown_editor/src/elements/element.dart';
 
-class OrderedList extends HtmlElement {
-  const OrderedList();
+class OrderedListElement extends Element {
+  const OrderedListElement();
 
   @override
   String toHtml(String input) {

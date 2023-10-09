@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class GetUrl extends StatefulWidget {
-  const GetUrl({
+class GetUrlDialog extends StatefulWidget {
+  const GetUrlDialog({
     required this.initialText,
     required this.initialUrl,
     required this.onGet,
@@ -26,10 +26,10 @@ class GetUrl extends StatefulWidget {
   }
 
   @override
-  State<GetUrl> createState() => _GetUrlState();
+  State<GetUrlDialog> createState() => _GetUrlDialogState();
 }
 
-class _GetUrlState extends State<GetUrl> {
+class _GetUrlDialogState extends State<GetUrlDialog> {
   final urlController = TextEditingController();
   final textController = TextEditingController();
 

@@ -1,7 +1,7 @@
-import 'package:flutter_app/objects/html_element.dart';
+import 'package:markdown_editor/src/elements/element.dart';
 
-class UnorderedList extends HtmlElement {
-  const UnorderedList();
+class UnorderedListElement extends Element {
+  const UnorderedListElement();
 
   @override
   String toHtml(String input) {

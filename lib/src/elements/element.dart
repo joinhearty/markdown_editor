@@ -1,5 +1,5 @@
-abstract class HtmlElement {
-  const HtmlElement();
+abstract class Element {
+  const Element();
 
   String toHtml(String input);
 

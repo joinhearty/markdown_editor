@@ -1,6 +1,6 @@
-import 'package:flutter_app/objects/html_element.dart';
+import 'package:markdown_editor/src/elements/element.dart';
 
-class LinkElement extends HtmlElement {
+class LinkElement extends Element {
   const LinkElement();
 
   static RegExp pattern =

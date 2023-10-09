@@ -1,6 +1,6 @@
-import 'package:flutter_app/objects/html_element.dart';
+import 'package:markdown_editor/src/elements/element.dart';
 
-class HeaderElement extends HtmlElement {
+class HeaderElement extends Element {
   const HeaderElement();
 
   @override

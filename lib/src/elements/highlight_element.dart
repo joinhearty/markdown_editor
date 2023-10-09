@@ -1,6 +1,6 @@
-import 'package:flutter_app/objects/html_element.dart';
+import 'package:markdown_editor/src/elements/element.dart';
 
-class HighlightElement extends HtmlElement {
+class HighlightElement extends Element {
   const HighlightElement();
 
   @override
