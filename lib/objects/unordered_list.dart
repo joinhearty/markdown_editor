@@ -10,56 +10,44 @@ class UnorderedList extends HtmlElement {
     var text = input.replaceAllMapped(pattern, (match) {
       final text = match.group(1) ?? '';
 
-      return '<li>$text</li>';
+      return '<uli>$text</uli>';
     });
 
     final buffer = StringBuffer();
 
     final segments = text.split('\n');
 
-    var inOtherGroup = false;
     var inGroup = false;
     for (var i = 0; i < segments.length; i++) {
-      final segment = segments[i];
+      var segment = segments[i];
 
-      if (segment.startsWith('<ol>')) {
-        inOtherGroup = true;
-      }
+      if (segment.startsWith('<uli>')) {
+        segment = segment.replaceAll('<uli>', '<li>');
+        segment = segment.replaceAll('</uli>', '</li>');
 
-      if (!inOtherGroup) {
-        if (segment.startsWith('<li>')) {
-          if (inGroup) {
-            buffer.write(segment);
-          } else {
-            inGroup = true;
-
-            buffer
-              ..write('<ul>')
-              ..write(segment);
-          }
-        } else if (inGroup) {
-          inGroup = false;
+        if (inGroup) {
+          buffer.write(segment);
+        } else {
+          inGroup = true;
 
           buffer
-            ..write('</ul>')
+            ..write('<ul>')
             ..write(segment);
-        } else {
-          buffer.write(segment);
         }
+      } else if (inGroup) {
+        inGroup = false;
 
-        if (i == segments.length - 1 && inGroup) {
-          buffer.writeln('</ul>');
-        } else {
-          buffer.writeln();
-        }
+        buffer
+          ..write('</ul>')
+          ..write(segment);
+      } else {
+        buffer.write(segment);
       }
 
-      if (inOtherGroup) {
-        buffer.writeln(segment);
-      }
-
-      if (inOtherGroup && segment.contains('</ol>')) {
-        inOtherGroup = false;
+      if (i == segments.length - 1 && inGroup) {
+        buffer.writeln('</ul>');
+      } else {
+        buffer.writeln();
       }
     }
 

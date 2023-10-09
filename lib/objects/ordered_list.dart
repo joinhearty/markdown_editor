@@ -10,7 +10,7 @@ class OrderedList extends HtmlElement {
     var text = input.replaceAllMapped(pattern, (match) {
       final text = match.group(1) ?? '';
 
-      return '<li>$text</li>';
+      return '<oli>$text</oli>';
     });
 
     final buffer = StringBuffer();
@@ -19,8 +19,11 @@ class OrderedList extends HtmlElement {
 
     var inGroup = false;
     for (var i = 0; i < segments.length; i++) {
-      final segment = segments[i];
-      if (segment.startsWith('<li>')) {
+      var segment = segments[i];
+      if (segment.startsWith('<oli>')) {
+        segment = segment.replaceAll('<oli>', '<li>');
+        segment = segment.replaceAll('</oli>', '</li>');
+
         if (inGroup) {
           buffer.write(segment);
         } else {
