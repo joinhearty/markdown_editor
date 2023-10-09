@@ -5,10 +5,10 @@ homepage: https://github.com/mrgnhnt96/markdown_editor
 repository: https://github.com/mrgnhnt96/markdown_editor
 topics:
   - markdown
-  - text editor
-  - rich text
+  - text_editor
+  - rich_text
   - HTML
-  - text input widget
+  - text_input_widget
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
