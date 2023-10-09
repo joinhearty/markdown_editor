@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   flutter_html: ^3.0.0-beta.2
   markdown_editor:
-    path: ../
+    path: ../packages/markdown_editor
 
 dev_dependencies:
   flutter_test:
