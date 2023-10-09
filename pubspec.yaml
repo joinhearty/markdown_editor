@@ -4,16 +4,11 @@ version: 0.1.0
 homepage: https://github.com/mrgnhnt96/markdown_editor
 repository: https://github.com/mrgnhnt96/markdown_editor
 topics:
-  - flutter
   - markdown
-  - editor
   - text editor
   - rich text
-  - formatting
   - HTML
-  - conversion
-  - Markdown to HTML
-  - HTML to Markdown
+  - markdown
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
