@@ -358,7 +358,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
     final newText = text.replaceRange(
       lineEnd + line.length,
-      null,
+      lineEnd + line.length,
       newLine,
     );
 
@@ -367,26 +367,6 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       selection: TextSelection.collapsed(
         offset: lineEnd + line.length + newLine.length,
       ),
-    );
-  }
-
-  // writes a tab character where the cursor is
-  void writeTab() {
-    final text = widget.controller.text;
-
-    final selection = widget.controller.selection;
-
-    const tab = '\t';
-
-    final newText = text.replaceRange(
-      selection.start,
-      null,
-      tab,
-    );
-
-    widget.controller.value = widget.controller.value.copyWith(
-      text: newText,
-      selection: TextSelection.collapsed(offset: selection.start + tab.length),
     );
   }
 
