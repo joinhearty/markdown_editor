@@ -1,21 +1,30 @@
 name: markdown_editor
-description: A simple markdown editor, supports minimal features, possible future features coming
-publish_to: none
-
-version: 0.0.1+1
+description: A simple Markdown editor for Flutter that supports basic Markdown elements such as bold, headers, highlighting, italics, links, ordered lists, and unordered lists.
+version: 0.1.0
+homepage: https://github.com/mrgnhnt96/markdown_editor
+repository: https://github.com/mrgnhnt96/markdown_editor
+topics:
+  - flutter
+  - markdown
+  - editor
+  - text editor
+  - rich text
+  - formatting
+  - HTML
+  - conversion
+  - Markdown to HTML
+  - HTML to Markdown
 
 environment:
-  sdk: ">=3.0.6 <4.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-  flutter_lints: ^2.0.0
+  derry: ^1.5.0
+  very_good_analysis: ^5.1.0
 
 flutter:
   uses-material-design: true
