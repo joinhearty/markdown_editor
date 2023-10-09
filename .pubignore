@@ -1,3 +1,4 @@
 /app_example/**
 analysis_options.yaml
 derry.yaml
+publish_package.sh
