@@ -2,23 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:markdown_editor/markdown_editor.dart';
 import 'package:markdown_editor/src/elements/link_element.dart';
+import 'package:markdown_editor/src/objects/toolbar_data.dart';
 
 class MarkdownEditor extends StatefulWidget {
   const MarkdownEditor({
     super.key,
     this.controller,
     this.onChanged,
+    this.toolbar = const ToolbarData(),
   }) : textField = null;
 
   const MarkdownEditor.field({
     super.key,
-    this.textField,
+    required TextField this.textField,
+    this.toolbar = const ToolbarData(),
   })  : controller = null,
         onChanged = null;
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final TextField? textField;
+  final ToolbarData toolbar;
 
   @override
   State<MarkdownEditor> createState() => _MarkdownEditorState();
@@ -175,58 +179,56 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
       child: Column(
         children: [
           DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(4),
-            ),
+            decoration: widget.toolbar.decoration ??
+                BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
             child: Row(
               children: <Widget>[
                 _Button(
                   tooltip: 'Bold (Ctrl + B)',
-                  icon: const Icon(Icons.format_bold),
+                  size: widget.toolbar.height,
+                  icon: widget.toolbar.bold?.icon ??
+                      const Icon(Icons.format_bold),
                   onPressed: boldText,
                 ),
                 _Button(
                   tooltip: 'Italics (Ctrl + I)',
-                  icon: const Icon(Icons.format_italic),
+                  size: widget.toolbar.height,
+                  icon: widget.toolbar.italic?.icon ??
+                      const Icon(Icons.format_italic),
                   onPressed: italicsText,
                 ),
                 _Button(
                   tooltip: 'Insert Link (Ctrl + V)',
-                  icon: const Icon(Icons.link),
+                  size: widget.toolbar.height,
+                  icon: widget.toolbar.link?.icon ?? const Icon(Icons.link),
                   onPressed: () async {
                     String initialText = '';
                     String initialUrl = '';
-
                     final selectedText = controller.selection.textInside(
                       controller.text,
                     );
-
                     if (LinkElement.pattern.hasMatch(selectedText)) {
                       final match =
                           LinkElement.pattern.firstMatch(selectedText);
-
                       initialText = match?.group(1) ?? '';
                       initialUrl = match?.group(2) ?? '';
                     } else {
                       initialText = selectedText;
-
                       final clipboard =
                           await Clipboard.getData(Clipboard.kTextPlain);
-
                       initialUrl = (clipboard?.text ?? '').trim();
                     }
-
                     if (!context.mounted) {
                       return;
                     }
-
                     GetUrlDialog(
                       initialText: initialText,
                       initialUrl: initialUrl,
                       onGet: (({String text, String url}) data) {
                         maintainSelection();
-
                         insertLink(data.text, data.url);
                       },
                     ).show(context);
@@ -234,17 +236,23 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
                 ),
                 _Button(
                   tooltip: 'Increase Heading (Ctrl + .)',
-                  icon: const Icon(Icons.text_increase),
+                  size: widget.toolbar.height,
+                  icon: widget.toolbar.increaseHeading?.icon ??
+                      const Icon(Icons.text_increase),
                   onPressed: increaseHeading,
                 ),
                 _Button(
                   tooltip: 'Decrease Heading (Ctrl + ,)',
-                  icon: const Icon(Icons.text_decrease),
+                  size: widget.toolbar.height,
+                  icon: widget.toolbar.decreaseHeading?.icon ??
+                      const Icon(Icons.text_decrease),
                   onPressed: decreaseHeading,
                 ),
                 _Button(
                   tooltip: 'Highlight (Ctrl + Shift + H)',
-                  icon: const Icon(Icons.h_mobiledata_sharp),
+                  size: widget.toolbar.height,
+                  icon: widget.toolbar.highlight?.icon ??
+                      const Icon(Icons.h_mobiledata_sharp),
                   onPressed: highlightText,
                 ),
               ],
@@ -275,12 +283,14 @@ class _Button extends StatelessWidget {
   const _Button({
     required this.icon,
     required this.onPressed,
+    this.size = 50,
     this.tooltip,
   });
 
   final String? tooltip;
   final Widget icon;
   final VoidCallback onPressed;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +299,7 @@ class _Button extends StatelessWidget {
       child: ColoredBox(
         color: Colors.transparent,
         child: SizedBox.square(
-          dimension: 50,
+          dimension: size,
           child: Tooltip(message: tooltip ?? '', child: icon),
         ),
       ),
