@@ -8,10 +8,12 @@ class MarkdownEditor extends StatefulWidget {
     super.key,
     this.controller,
     this.onChanged,
+    this.textField,
   });
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final TextField? textField;
 
   @override
   State<MarkdownEditor> createState() => _MarkdownEditorState();
@@ -241,14 +243,20 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
               ],
             ),
           ),
-          TextField(
-            controller: controller,
-            maxLines: 10,
-            onChanged: widget.onChanged,
-            onTapOutside: (_) {
-              maintainSelection();
-            },
-          ),
+          widget.textField?.copyWith(
+                onTapOutside: (_) {
+                  maintainSelection();
+                  widget.textField?.onTapOutside?.call(_);
+                },
+              ) ??
+              TextField(
+                controller: controller,
+                maxLines: 10,
+                onChanged: widget.onChanged,
+                onTapOutside: (_) {
+                  maintainSelection();
+                },
+              ),
         ],
       ),
     );
@@ -277,6 +285,76 @@ class _Button extends StatelessWidget {
           child: Tooltip(message: tooltip ?? '', child: icon),
         ),
       ),
+    );
+  }
+}
+
+extension _TextFieldX on TextField {
+  TextField copyWith({
+    void Function(PointerDownEvent)? onTapOutside,
+  }) {
+    return TextField(
+      key: key,
+      controller: controller,
+      focusNode: focusNode,
+      undoController: undoController,
+      decoration: decoration,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      style: style,
+      strutStyle: strutStyle,
+      textAlign: textAlign,
+      textAlignVertical: textAlignVertical,
+      textDirection: textDirection,
+      readOnly: readOnly,
+      showCursor: showCursor,
+      autofocus: autofocus,
+      obscuringCharacter: obscuringCharacter,
+      obscureText: obscureText,
+      autocorrect: autocorrect,
+      smartDashesType: smartDashesType,
+      smartQuotesType: smartQuotesType,
+      enableSuggestions: enableSuggestions,
+      maxLines: maxLines,
+      minLines: minLines,
+      expands: expands,
+      maxLength: maxLength,
+      maxLengthEnforcement: maxLengthEnforcement,
+      onChanged: onChanged,
+      onEditingComplete: onEditingComplete,
+      onSubmitted: onSubmitted,
+      onAppPrivateCommand: onAppPrivateCommand,
+      inputFormatters: inputFormatters,
+      enabled: enabled,
+      cursorWidth: cursorWidth,
+      cursorHeight: cursorHeight,
+      cursorRadius: cursorRadius,
+      cursorOpacityAnimates: cursorOpacityAnimates,
+      cursorColor: cursorColor,
+      selectionHeightStyle: selectionHeightStyle,
+      selectionWidthStyle: selectionWidthStyle,
+      keyboardAppearance: keyboardAppearance,
+      scrollPadding: scrollPadding,
+      dragStartBehavior: dragStartBehavior,
+      enableInteractiveSelection: enableInteractiveSelection,
+      selectionControls: selectionControls,
+      onTap: onTap,
+      onTapOutside: onTapOutside ?? this.onTapOutside,
+      mouseCursor: mouseCursor,
+      buildCounter: buildCounter,
+      scrollController: scrollController,
+      scrollPhysics: scrollPhysics,
+      autofillHints: autofillHints,
+      contentInsertionConfiguration: contentInsertionConfiguration,
+      clipBehavior: clipBehavior,
+      restorationId: restorationId,
+      scribbleEnabled: scribbleEnabled,
+      enableIMEPersonalizedLearning: enableIMEPersonalizedLearning,
+      contextMenuBuilder: contextMenuBuilder,
+      canRequestFocus: canRequestFocus,
+      spellCheckConfiguration: spellCheckConfiguration,
+      magnifierConfiguration: magnifierConfiguration,
     );
   }
 }
