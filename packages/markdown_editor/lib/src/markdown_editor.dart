@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:markdown_editor/markdown_editor.dart';
+
 import 'package:markdown_editor/src/elements/link_element.dart';
+import 'package:markdown_editor/src/get_url_dialog.dart';
+import 'package:markdown_editor/src/mixins/editor_mixin.dart';
 import 'package:markdown_editor/src/objects/toolbar_data.dart';
 
 class MarkdownEditor extends StatefulWidget {
