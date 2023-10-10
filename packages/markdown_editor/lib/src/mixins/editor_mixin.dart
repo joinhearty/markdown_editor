@@ -145,14 +145,14 @@ mixin EditorMixin {
 
     if (!select) {
       textSelection = TextSelection.collapsed(
-        offset: selection.start + selectedText.length + startLength,
+        offset: selection.start +
+            selectedText.length +
+            startLength +
+            modifiedText.length,
       );
-    }
-
-    if (selectedText.isEmpty) {
+    } else if (selectedText.isEmpty) {
       textSelection = TextSelection.collapsed(
-        offset:
-            selection.start + selectedText.length + (modifiedText.length ~/ 2),
+        offset: selection.start + selectedText.length + modifiedText.length,
       );
     }
 
