@@ -8,8 +8,13 @@ class MarkdownEditor extends StatefulWidget {
     super.key,
     this.controller,
     this.onChanged,
+  }) : textField = null;
+
+  const MarkdownEditor.field({
+    super.key,
     this.textField,
-  });
+  })  : controller = null,
+        onChanged = null;
 
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
@@ -30,7 +35,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
   void initState() {
     super.initState();
 
-    _controller = widget.controller ?? TextEditingController();
+    _controller = widget.controller ??
+        widget.textField?.controller ??
+        TextEditingController();
     _controller.addListener(selectionListener);
   }
 
@@ -244,6 +251,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> with EditorMixin {
             ),
           ),
           widget.textField?.copyWith(
+                controller: controller,
                 onTapOutside: (_) {
                   maintainSelection();
                   widget.textField?.onTapOutside?.call(_);
@@ -291,11 +299,12 @@ class _Button extends StatelessWidget {
 
 extension _TextFieldX on TextField {
   TextField copyWith({
+    TextEditingController? controller,
     void Function(PointerDownEvent)? onTapOutside,
   }) {
     return TextField(
       key: key,
-      controller: controller,
+      controller: controller ?? this.controller,
       focusNode: focusNode,
       undoController: undoController,
       decoration: decoration,
