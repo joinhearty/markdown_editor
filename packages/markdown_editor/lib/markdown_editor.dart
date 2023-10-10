@@ -7,3 +7,6 @@ export 'src/markdown_editor.dart';
 export 'src/get_url_dialog.dart';
 
 export 'src/mixins/editor_mixin.dart';
+
+export 'src/objects/button_data.dart';
+export 'src/objects/toolbar_data.dart';
